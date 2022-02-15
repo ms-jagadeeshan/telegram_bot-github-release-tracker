@@ -1,2 +1,2 @@
 # telegram_bot-github-release-tracker
-This is Telegram bot writed in C++, to track github releases
+This is Telegram bot written in C++, to track github releases
