@@ -20,6 +20,7 @@ $(BIN)/$(TARGET) : $(OBJECT)
 	$(CXX) -o $@ $(CXXFLAGS1) $(INCLUDE) $(CXXFLAGS)  $^  $(LIBS)
 
 $(BIN)/%.o : $(SRC)/%.cpp
+	mkdir -p $(BIN)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 .PHONY : help run clean
