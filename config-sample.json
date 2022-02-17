@@ -1,8 +1,9 @@
 {
-    "chat_id": "", 
+    "chat_id": "",
     "token": "",
     "repos": [
         "ms-jagadeeshan/telegram_bot-github-release-tracker",
-        "YTVanced/VancedManager"
-    ]
+        "torvalds/linux"
+    ],
+    "github_personal_token": ""
 }

@@ -1,4 +1,15 @@
+/**
+ * @file config.cpp
+ * @author Jagadeeshan S (jagadeeshanmsj@gmail.com)
+ * @brief Function related to reading and string the configuration from configuration file
+ * @version 0.5
+ * @date 2022-02-16
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #include "config.h"
+
 
 void json2config(nlohmann::json &j, struct config_t &conf)
 {
@@ -8,11 +19,11 @@ void json2config(nlohmann::json &j, struct config_t &conf)
     {
         conf.repos.push_back(element.get<std::string>());
     }
+    j.at("github_personal_token").get_to(conf.personal_token);
 }
 
 void get_config(struct config_t &conf)
 {
-
     std::ifstream conf_in(CONFIG_PATH);
     if (conf_in.is_open())
     {

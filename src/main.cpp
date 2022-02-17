@@ -9,33 +9,6 @@
 #include "util.h"
 #include "telegram.h"
 
-void get_page(const char *url, struct MemoryStruct &chunk /*, CURL *&curl_handle*/)
-{
-    static CURL *curl_handle;
-    if (!curl_handle)
-        curl_handle = curl_easy_init();
-
-    CURLcode res;
-    if (curl_handle)
-    {
-        curl_easy_setopt(curl_handle, CURLOPT_URL, url);
-        curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1L);
-        curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
-        curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&chunk);
-        curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36");
-        // curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headers);
-        // curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
-
-        res = curl_easy_perform(curl_handle);
-
-        if (res != CURLE_OK)
-        {
-            std::cerr << "error: " << curl_easy_strerror(res) << "\n";
-            exit(1);
-        }
-        curl_easy_reset(curl_handle);
-    }
-}
 void check_conf(struct config_t &conf)
 {
     if (conf.chat_id.empty())
@@ -98,13 +71,28 @@ bool check_version(std::string new_tag, std::string &repo)
     }
 }
 
+void reponse_code_check(long &response_code, std::string repo, nlohmann::json j)
+{
+    if (response_code == 403)
+    {
+        std::cerr << "Api Limit Exceeded!  To increase limit use github personal token\n";
+    }
+    else if (response_code == 404)
+    {
+        std::cerr << "Error: " << repo << " not exists!\n";
+    }
+    else
+    {
+        if (j["message"] == nullptr)
+            std::cerr << "Error while fetching " << repo;
+        else
+            std::cerr << "Error while fetching " << repo << "\nMessage: " << j["message"] << '\n';
+    }
+}
+
 int main()
 {
-    // Curl initialize
-    curl_global_init(CURL_GLOBAL_ALL);
-    // Memory Struct
-    struct MemoryStruct chunk;
-
+    curlHandler curl;
     struct config_t conf;
     while (true)
     {
@@ -112,52 +100,52 @@ int main()
         check_conf(conf);
         for (auto &repo : conf.repos)
         {
-            chunk.memory = (char *)malloc(1);
-            chunk.size = 0;
-
+            std::string response_string;
             std::string url = std::string("https://api.github.com/repos/").append(repo).append("/releases/latest");
-            get_page(url.c_str(), chunk);
-            nlohmann::json j;
-            std::ofstream out(TMP_FILE_PATH);
-            out << chunk.memory;
-            out.close();
-            std::ifstream input(TMP_FILE_PATH);
-            input >> j;
-            if (j["message"] != nullptr)
+            curl.get_page(url.c_str(), response_string, conf.personal_token);
+
+            if (response_string == "")
             {
-                std::cout << "Error: " << j["message"];
+                std::cerr << "Error: Response string is empty while fetching " << repo << "\n";
+                continue;
+            }
+
+            nlohmann::json j = nlohmann::json::parse(response_string);
+
+            if (curl.response_code != 200)
+            {
+                reponse_code_check(curl.response_code, repo, j);
                 continue;
             }
             std::string new_tag = j["tag_name"].get<std::string>();
             if (check_version(new_tag, repo))
             {
-                std::string reponame = j["assets"][0]["name"];
+                std::string github = "https://github.com/";
+                std::string author_name = repo.substr(0, repo.find_first_of('/'));
+                std::string repo_name = repo.substr(repo.find_first_of('/') + 1);
                 std::string repo_link = std::string("https://github.com/").append(repo);
-                std::string author_link = std::string("https://github.com/").append(repo, 0, repo.find_first_of('/'));
-                std::string uploader_name = j["assets"][0]["uploader"]["login"];
+                std::string author_link = std::string("https://github.com/").append(author_name);
                 std::string release_name = j["name"];
                 std::string changelog = j["body"];
-                std::string download_text = j["assets"][0]["browser_download_url"];
-                std::string msg_text = std::string("<strong>New <a href='").append(repo_link).append("'>").append(reponame).append("</a> Update is out</strong>\n<strong>Author: </strong><a href='").append(author_link).append("'>").append(uploader_name).append("</a>\n<strong>Release Name: </strong><code>").append(release_name).append("</code>\n<strong>Release Tag: </strong><code>").append(new_tag).append("</code>\n<strong>Changelogs: </strong>\n<code>").append(changelog).append("</code>\n").append(download_text).append("#").append(new_tag).append(" #").append(reponame);
+                std::string html_url = j["html_url"];
+                std::string msg_text = std::string("<strong>New <a href='").append(repo_link).append("'>").append(repo_name).append("</a> Update is out</strong>\n<strong>Author: </strong><a href='").append(author_link).append("'>").append(author_name).append("</a>\n<strong>Release Name: </strong><code>").append(release_name).append("</code>\n<strong>Release Tag: </strong><code>").append(new_tag).append("</code>\n<strong>Changelogs: </strong>\n<code>").append(changelog).append("</code>\n").append(html_url).append(" #").append(new_tag).append(" #").append(repo_name);
                 //std::cout << msg_text;
                 // std::cout << "<strong>New <a href='" << repo_link << "'>"
-                //           << reponame << "</a> Update is out</strong>\n<strong>Author: </strong><a href='"
+                //           << repo_name << "</a> Update is out</strong>\n<strong>Author: </strong><a href='"
                 //           << author_link << "'>"
-                //           << uploader_name << "</a>\n<strong>Release Name: </strong><code>"
+                //           << author_name << "</a>\n<strong>Release Name: </strong><code>"
                 //           << release_name << "</code>\n<strong>Release Tag: </strong><code>"
                 //           << new_tag << "</code>\n<strong>Changelogs: </strong>\n<code>"
                 //           << changelog << "</code>\n"
-                //           << download_text << "#"
+                //           << html_url << " #"
                 //           << new_tag << " #"
                 //           << reponame;
                 std::cout << "Sending message\n";
                 telegram_message_send(conf, msg_text);
             }
-
-            free(chunk.memory);
         }
         std::cout << "Up-to-date\n";
-        sleep(300);
+        sleep(FETCH_INTERVAL);
     }
     curl_global_cleanup();
 

@@ -1,11 +1,12 @@
 #include "telegram.h"
-void telegram_message_send(struct config_t &conf,  std::string &msg_text)
+
+void telegram_message_send(struct config_t &conf, std::string &msg_text)
 {
     TgBot::Bot bot(conf.token);
     TgBot::Message::Ptr message;
     bot.getEvents().onCommand("start", [&bot](TgBot::Message::Ptr message)
                               { bot.getApi().sendMessage(message->chat->id, "Hi!"); });
-    bot.getApi().sendMessage(conf.chat_id, msg_text, false, 0, std::make_shared<TgBot::GenericReply>(),"HTML");
+    bot.getApi().sendMessage(conf.chat_id, msg_text, false, 0, std::make_shared<TgBot::GenericReply>(), "HTML");
 
     // try
     // {
@@ -25,7 +26,6 @@ void telegram_message_send(struct config_t &conf,  std::string &msg_text)
 
 //int main()
 //{
-// TgBot::Bot bot("5203931779:AAF8nLEqJ3wq_BfLDMBIgCY3cIm0a7O_Nus");
 // bot.getEvents().onCommand("start", [&bot](TgBot::Message::Ptr message)
 //                           { bot.getApi().sendMessage(message->chat->id, "Hi!"); });
 // bot.getEvents().onAnyMessage([&bot](TgBot::Message::Ptr message)

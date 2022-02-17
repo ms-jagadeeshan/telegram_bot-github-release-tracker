@@ -30,11 +30,12 @@ Rename config-sample.json to config.json and fill the chat id, token,repos to be
     "token": "",       // Enter your bot token(stored locally,so don't have to worry)
     "repos": [         // add the repos you want to track
         "ms-jagadeeshan/telegram_bot-github-release-tracker",
-        "YTVanced/VancedManager"
-    ]
+        "torvalds/linux"
+    ],
+    "github_personal_token":""  // Format:  "<github_username>:token"
 }
 ```
-Go to telegram and https://t.me/botfather to get bot token from telegram.   
+Go to telegram and https://t.me/botfather to get bot token from telegram.    
 And https://t.me/rawdatabot to get you chat id.    
 After filling chat id and token just run this to start the bot
 ```sh
@@ -43,7 +44,20 @@ make run
 # cd bin && ./telegram_bot-github-release-tracker
 ```
 
+# Customizing
+In [config.h](./include/config.h) header file paths are defined, you can change them and compile
+```c++
+// Configuration file path
+#define CONFIG_PATH "../config.json"
 
+// Temporary file path
+#define TMP_FILE_PATH "/tmp/telegram-bot-cachedkjafldfklalg.json"
 
+// Path of folder, where latest version tag stored
+#define DATA_FOLDER_PATH "../data/"
+```
 
+# Things to be noted
+- We can use github api only 60 times a hour without github user authentication. So generate your github token from [here](https://github.com/settings/tokens)
+- Note `"github_personal_token"` should be filled in the format of `"yourusername:token"`
 
