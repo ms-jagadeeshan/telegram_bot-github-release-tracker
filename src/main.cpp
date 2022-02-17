@@ -4,6 +4,7 @@
 #include <unistd.h>
 #endif
 #include <iostream>
+#include <sstream>
 #include <curl/curl.h>
 #include "config.h"
 #include "util.h"
@@ -79,7 +80,7 @@ void reponse_code_check(long &response_code, std::string repo, nlohmann::json j)
     }
     else if (response_code == 404)
     {
-        std::cerr << "Error: " << repo << " not exists!\n";
+        std::cerr << "Releases not found in " << repo << "\n";
     }
     else
     {
@@ -121,25 +122,22 @@ int main()
             if (check_version(new_tag, repo))
             {
                 std::string github = "https://github.com/";
-                std::string author_name = repo.substr(0, repo.find_first_of('/'));
+                std::string author_name = j["author"]["login"];
                 std::string repo_name = repo.substr(repo.find_first_of('/') + 1);
                 std::string repo_link = std::string("https://github.com/").append(repo);
                 std::string author_link = std::string("https://github.com/").append(author_name);
                 std::string release_name = j["name"];
                 std::string changelog = j["body"];
                 std::string html_url = j["html_url"];
-                std::string msg_text = std::string("<strong>New <a href='").append(repo_link).append("'>").append(repo_name).append("</a> Update is out</strong>\n<strong>Author: </strong><a href='").append(author_link).append("'>").append(author_name).append("</a>\n<strong>Release Name: </strong><code>").append(release_name).append("</code>\n<strong>Release Tag: </strong><code>").append(new_tag).append("</code>\n<strong>Changelogs: </strong>\n<code>").append(changelog).append("</code>\n").append(html_url).append(" #").append(new_tag).append(" #").append(repo_name);
-                //std::cout << msg_text;
-                // std::cout << "<strong>New <a href='" << repo_link << "'>"
-                //           << repo_name << "</a> Update is out</strong>\n<strong>Author: </strong><a href='"
-                //           << author_link << "'>"
-                //           << author_name << "</a>\n<strong>Release Name: </strong><code>"
-                //           << release_name << "</code>\n<strong>Release Tag: </strong><code>"
-                //           << new_tag << "</code>\n<strong>Changelogs: </strong>\n<code>"
-                //           << changelog << "</code>\n"
-                //           << html_url << " #"
-                //           << new_tag << " #"
-                //           << reponame;
+                std::string msg_text;
+                std::stringstream ss;
+                ss << "<strong>New <a href='" << repo_link << "'>" << repo_name << "</a> Update is out</strong>\n"
+                   << "<strong>Author: </strong><a href='" << author_link << "'>" << author_name << "</a>\n"
+                   << "<strong>Release Name: </strong><code>" << release_name << "</code>\n"
+                   << "<strong>Release Tag: </strong><code>" << new_tag << "</code>\n"
+                   << "<strong>Changelogs: </strong>\n<code>" << changelog << "</code>\n"
+                   << html_url << "\n#" << new_tag << " #" << repo_name;
+                msg_text=ss.str();
                 std::cout << "Sending message\n";
                 telegram_message_send(conf, msg_text);
             }
