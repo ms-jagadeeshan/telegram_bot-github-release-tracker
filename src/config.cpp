@@ -24,7 +24,7 @@ void json2config(nlohmann::json &j, struct config_t &conf)
 void get_config(struct config_t &conf)
 {
     std::ifstream conf_in(CONFIG_PATH);
-    if (conf_in.is_open())
+    if (!conf_in.is_open())
     {
         conf_in.close();
         std::ofstream conf_out(CONFIG_PATH);
@@ -47,7 +47,9 @@ void get_config(struct config_t &conf)
             exit(1);
         }
         conf_out.close();
+        conf_in.open(CONFIG_PATH);
     }
+
     conf.repos.clear();
     if (conf_in.is_open())
     {
